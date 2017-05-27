@@ -1,0 +1,27 @@
+{
+  "name": "svg2img-electron",
+  "version": "1.0.1",
+  "description": "Wrapper of svg2img with fallback, based on electron-image-resize, for platforms which doesn't have cairo/pixman libraries. svg2img compatible.",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharpfuryz/svg2img-electron.git"
+  },
+  "keywords": [
+    "svg2img",
+    "electron"
+  ],
+  "author": "Dmytro",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sharpfuryz/svg2img-electron/issues"
+  },
+  "homepage": "https://github.com/sharpfuryz/svg2img-electron#readme",
+  "dependencies": {
+    "electron": "^1.6.10",
+    "svg2img": "^0.2.8"
+  }
+}
