@@ -1,6 +1,6 @@
 {
   "name": "svg2img-electron",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Wrapper of svg2img with fallback, based on electron-image-resize, for platforms which doesn't have cairo/pixman libraries. svg2img compatible.",
   "main": "index.js",
   "scripts": {

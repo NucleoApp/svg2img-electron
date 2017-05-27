@@ -26,7 +26,34 @@ var svg2imgElectron = function (svg, options, callback){
         var electron = require('electron');
         fallback = true;
     }
+    // Fallback for tests
+    if(Object.hasOwnProperty('fallback')){
+        fallback = options.fallback;
+    }
 
+    var isSVGcode = function (svg) {
+      var code = svg.toLowerCase();
+      return (code.indexOf('<svg xmlns="') > -1);
+    };
+    var generateUUID = function(){
+        var text = "";
+        var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for( var i=0; i < 5; i++ )
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        return text;
+    };
+    var saveSVGCode = function (code) {
+        var os = require('os');
+        var path = require('path');
+
+        var tempDir = os.tmpdir();
+        var filename = generateUUID();
+        var filepath = "" + tempDir + path.sep + filename;
+
+        fs.writeFileSync(filepath, svg, {encoding: 'utf8'}, function (err) {
+            return filepath;
+        });
+    };
     var electronFallback = function (svg, options, callback) {
         var BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
         var url = require('url');
@@ -61,7 +88,12 @@ var svg2imgElectron = function (svg, options, callback){
     };
 
     if(fallback){
-        electronFallback(svg, options, callback);
+        if(isSVGcode(svg)){
+            var filepath = saveSVGCode(svg);
+            electronFallback(filepath, options, callback);
+        }else{
+            electronFallback(svg, options, callback);
+        }
     }else{
         svg2img(svg, options, callback);
     }
