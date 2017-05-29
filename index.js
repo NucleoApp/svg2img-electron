@@ -7,7 +7,6 @@
 /*global require:true*/
 /*global __dirname:true*/
 /*global console:true*/
-// ctx.svg2img(tempPath, {'width':rect.width, 'height':rect.height}, (error, buffer) => {
 
 var svg2imgElectron = function (svg, options, callback){
     "use strict";
@@ -22,7 +21,6 @@ var svg2imgElectron = function (svg, options, callback){
         var svg2img = require('svg2img');
         fallback = false;
     }catch (e) {
-        console.log('Fallback to slow processing method, cairo not found');
         var electron = require('electron');
         fallback = true;
     }
@@ -81,7 +79,7 @@ var svg2imgElectron = function (svg, options, callback){
            win.webContents.insertCSS('img { width: '+options.width+'px; height:'+options.height+'px;}');
            setTimeout(function () {
                win.capturePage(function (image) {
-                   callback(null, image);
+                   callback(null, image.toPNG({}));
                });
            }, 500);
         });
