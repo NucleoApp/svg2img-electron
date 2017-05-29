@@ -14,6 +14,7 @@ var svg2imgElectron = function (svg, options, callback){
     var os = require('os');
     var fs = require('fs');
     var path = require('path');
+    var cheerio = require('cheerio');
 
     var fallback = false;
     try{
@@ -40,7 +41,17 @@ var svg2imgElectron = function (svg, options, callback){
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         return text;
     };
-    var saveSVGCode = function (code) {
+
+    var patchCode = function (svg, options) {
+        // <svg width = options.width height = options.height viewport = 0 0 options.width options.height
+        var $ = cheerio.load(svg, {xmlMode: true});
+        var viewport = "0 0 "+options.width+" "+options.height;
+        $('svg').attr('width', options.width);
+        $('svg').attr('height', options.height);
+        $('svg').attr('viewport', viewport);
+        return $.xml();
+    };
+    var saveFileAndProcess = function (svg, options, callback) {
         var os = require('os');
         var path = require('path');
 
@@ -48,11 +59,14 @@ var svg2imgElectron = function (svg, options, callback){
         var filename = generateUUID();
         var filepath = "" + tempDir + path.sep + filename;
 
-        fs.writeFileSync(filepath, svg, {encoding: 'utf8'}, function (err) {
-            return filepath;
+        fs.writeFile(filepath, svg, {encoding: 'utf8'}, function (err) {
+            if(err){
+                console.log(err);
+            }
+            electronProcess(filepath, options, callback);
         });
     };
-    var electronFallback = function (svg, options, callback) {
+    var electronProcess = function (svg, options, callback) {
         var BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
         var url = require('url');
         var win = new BrowserWindow({
@@ -68,7 +82,7 @@ var svg2imgElectron = function (svg, options, callback){
             }
         });
         win.once('closed', function () {
-           win = null;
+            win = null;
         });
         win.loadURL(url.format({
             pathname: svg,
@@ -76,22 +90,26 @@ var svg2imgElectron = function (svg, options, callback){
             slashes: true
         }));
         win.webContents.once('did-finish-load', function () {
-           win.webContents.insertCSS('img { width: '+options.width+'px; height:'+options.height+'px;}');
-           setTimeout(function () {
-               win.capturePage(function (image) {
-                   callback(null, image.toPNG({}));
-               });
-           }, 500);
+            win.capturePage(function (image) {
+                callback(null, image.toPNG({}));
+            });
         });
+    };
+    var electronFallback = function (svg, options, callback) {
+        var patchedCode = "";
+        if(isSVGcode(svg)){
+            patchedCode = patchCode(svg, options);
+            saveFileAndProcess(patchedCode, options, callback);
+        }else{
+            fs.readFile(svg, function (err, data) {
+               patchedCode = patchedCode(data, options);
+               saveFileAndProcess(patchedCode, options, callback);
+            });
+        }
     };
 
     if(fallback){
-        if(isSVGcode(svg)){
-            var filepath = saveSVGCode(svg);
-            electronFallback(filepath, options, callback);
-        }else{
-            electronFallback(svg, options, callback);
-        }
+        electronFallback(svg, options, callback);
     }else{
         svg2img(svg, options, callback);
     }
