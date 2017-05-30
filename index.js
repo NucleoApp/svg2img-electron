@@ -45,11 +45,10 @@ var svg2imgElectron = function (svg, options, callback) {
         // <svg width = options.width height = options.height viewport = 0 0 options.width options.height
         var $ = cheerio.load(svg, {xmlMode: true});
         var viewport = "0 0 " + options.width + " " + options.height;
-        var root = $('svg');
-        $(root).attr('width', options.width);
-        $(root).attr('height', options.height);
-        $(root).attr('viewport', viewport);
-        return $.xml();
+        $('svg').attr('width', options.width);
+        $('svg').attr('height', options.height);
+        $('svg').attr('viewport', viewport);
+        return $.xml().toString();
     };
     var saveFileAndProcess = function (svg, options, callback) {
         var os = require('os');
@@ -99,14 +98,18 @@ var svg2imgElectron = function (svg, options, callback) {
     };
     var electronFallback = function (svg, options, callback) {
         var patchedCode = "";
-        if (isSVGcode(svg)) {
-            patchedCode = patchCode(svg, options);
-            saveFileAndProcess(patchedCode, options, callback);
-        } else {
-            fs.readFile(svg, function (err, data) {
-                patchedCode = patchCode(data, options);
+        if(typeof svg === 'undefined' || svg === null) {
+            callback(null, null);
+        }else{
+            if (isSVGcode(svg)) {
+                patchedCode = patchCode(svg, options);
                 saveFileAndProcess(patchedCode, options, callback);
-            });
+            } else {
+                fs.readFile(svg, function (err, data) {
+                    patchedCode = patchCode(data, options);
+                    saveFileAndProcess(patchedCode, options, callback);
+                });
+            }
         }
     };
 
