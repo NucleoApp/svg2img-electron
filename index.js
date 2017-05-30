@@ -12,6 +12,9 @@ var fs = require('fs');
 var path = require('path');
 var deepcopy = require('deepcopy');
 const cheerio = require('cheerio');
+const url = require('url');
+const electron = require('electron');
+const BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
 
 var svg2imgElectron = function (svg, options, callback) {
     "use strict";
@@ -31,7 +34,7 @@ var svg2imgElectron = function (svg, options, callback) {
 
     var isSVGcode = function (svg) {
         var code = svg.toLowerCase();
-        return (code.indexOf('<svg xmlns="') > -1);
+        return (code.indexOf('<svg"') > -1);
     };
     var generateUUID = function () {
         var text = "";
@@ -56,7 +59,7 @@ var svg2imgElectron = function (svg, options, callback) {
 
         var tempDir = os.tmpdir();
         var filename = generateUUID();
-        var filepath = "" + tempDir + path.sep + filename;
+        var filepath = "" + tempDir + path.sep + filename + '.svg';
 
         fs.writeFile(filepath, svg, {encoding: 'utf8'}, function (err) {
             if (err) {
@@ -65,10 +68,7 @@ var svg2imgElectron = function (svg, options, callback) {
             electronProcess(filepath, options, callback);
         });
     };
-    var electronProcess = function (svg, options, callback) {
-        var url = require('url');
-        const electron = require('electron');
-        var BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
+    var electronProcess = function (filepath, options, callback) {
         var win = new BrowserWindow({
             x: 0,
             y: 0,
@@ -85,30 +85,45 @@ var svg2imgElectron = function (svg, options, callback) {
             win = null;
         });
         win.loadURL(url.format({
-            pathname: svg,
+            pathname: filepath,
             protocol: 'file:',
             slashes: true
         }));
         win.webContents.once('did-finish-load', function () {
-            win.capturePage(function (image) {
-                callback(null, image.toPNG({}));
-            });
+            setTimeout(function() {
+                win.capturePage(function (image) {
+                    fs.unlink(filepath, function (ioErr) {
+                        callback(null, image.toPNG({}));
+                        win.close();
+                    });
+                });
+            }, 500);
         });
+    };
+    var processFile = function(svg, options, callback){
+        var patchedCode = patchCode(svg, options);
+        saveFileAndProcess(patchedCode, options, callback);
     };
     var electronFallback = function (svg, options, callback) {
         if((svg.length < 10) || (typeof(svg) === 'undefined') || (svg === null)){
             callback(null,void 0);
         }else{
-            var patchedCode = "";
-            if (isSVGcode(svg)) {
-                patchedCode = patchCode(code, options);
-                saveFileAndProcess(patchedCode, options, callback);
-            } else {
-                fs.readFile(svg, function (err, data) {
-                    patchedCode = patchCode(data, options);
-                    saveFileAndProcess(patchedCode, options, callback);
-                });
-            }
+            fs.lstat(svg, function (err, stats){
+                if(err){
+                    callback(null, void 0);
+                }
+                if(stats){
+                    if(stats.isFile()){
+                        fs.readFile(svg, function (err, data) {
+                            processFile(data, options, callback);
+                        });
+                    }else{
+                        processFile(svg, options, callback);
+                    }
+                }else{
+                    processFile(svg, options, callback);
+                }
+            });
         }
     };
 
