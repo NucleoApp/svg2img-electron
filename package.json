@@ -1,10 +1,10 @@
 {
   "name": "svg2img-electron",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Wrapper of svg2img with fallback, based on electron-image-resize, for platforms which doesn't have cairo/pixman libraries. svg2img compatible.",
   "main": "index.js",
   "scripts": {
-    "test": "npm test"
+    "test": "jasmine spec/javascripts/electron_fallback/SvgSpec.js"
   },
   "repository": {
     "type": "git",
@@ -23,5 +23,9 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.1",
     "svg2img": "^0.2.8"
+  },
+  "devDependencies": {
+    "electron": "^1.6.10",
+    "jasmine": "^2.6.0"
   }
 }

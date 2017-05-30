@@ -8,36 +8,35 @@
 /*global __dirname:true*/
 /*global console:true*/
 
-var svg2imgElectron = function (svg, options, callback){
+var svg2imgElectron = function (svg, options, callback) {
     "use strict";
 
     var os = require('os');
     var fs = require('fs');
     var path = require('path');
-    var cheerio = require('cheerio');
-
+    const cheerio = require('cheerio');
     var fallback = false;
-    try{
+    try {
         var canvas = require('canvas');
+        //noinspection JSDuplicatedDeclaration
         var svg2img = require('svg2img');
         fallback = false;
-    }catch (e) {
-        var electron = require('electron');
+    } catch (e) {
         fallback = true;
     }
     // Fallback for tests
-    if(Object.hasOwnProperty('fallback')){
+    if (Object.hasOwnProperty('fallback')) {
         fallback = options.fallback;
     }
 
     var isSVGcode = function (svg) {
-      var code = svg.toLowerCase();
-      return (code.indexOf('<svg xmlns="') > -1);
+        var code = svg.toLowerCase();
+        return (code.indexOf('<svg xmlns="') > -1);
     };
-    var generateUUID = function(){
+    var generateUUID = function () {
         var text = "";
         var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for( var i=0; i < 5; i++ )
+        for (var i = 0; i < 5; i++)
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         return text;
     };
@@ -45,10 +44,11 @@ var svg2imgElectron = function (svg, options, callback){
     var patchCode = function (svg, options) {
         // <svg width = options.width height = options.height viewport = 0 0 options.width options.height
         var $ = cheerio.load(svg, {xmlMode: true});
-        var viewport = "0 0 "+options.width+" "+options.height;
-        $('svg').attr('width', options.width);
-        $('svg').attr('height', options.height);
-        $('svg').attr('viewport', viewport);
+        var viewport = "0 0 " + options.width + " " + options.height;
+        var root = $('svg');
+        $(root).attr('width', options.width);
+        $(root).attr('height', options.height);
+        $(root).attr('viewport', viewport);
         return $.xml();
     };
     var saveFileAndProcess = function (svg, options, callback) {
@@ -60,15 +60,16 @@ var svg2imgElectron = function (svg, options, callback){
         var filepath = "" + tempDir + path.sep + filename;
 
         fs.writeFile(filepath, svg, {encoding: 'utf8'}, function (err) {
-            if(err){
+            if (err) {
                 console.log(err);
             }
             electronProcess(filepath, options, callback);
         });
     };
     var electronProcess = function (svg, options, callback) {
-        var BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
         var url = require('url');
+        const electron = require('electron');
+        var BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
         var win = new BrowserWindow({
             x: 0,
             y: 0,
@@ -92,25 +93,27 @@ var svg2imgElectron = function (svg, options, callback){
         win.webContents.once('did-finish-load', function () {
             win.capturePage(function (image) {
                 callback(null, image.toPNG({}));
+                win = null;
             });
         });
     };
     var electronFallback = function (svg, options, callback) {
         var patchedCode = "";
-        if(isSVGcode(svg)){
+        if (isSVGcode(svg)) {
             patchedCode = patchCode(svg, options);
             saveFileAndProcess(patchedCode, options, callback);
-        }else{
+        } else {
             fs.readFile(svg, function (err, data) {
-               patchedCode = patchedCode(data, options);
-               saveFileAndProcess(patchedCode, options, callback);
+                patchedCode = patchCode(data, options);
+                saveFileAndProcess(patchedCode, options, callback);
             });
         }
     };
 
-    if(fallback){
+    if (fallback) {
         electronFallback(svg, options, callback);
-    }else{
+    } else {
+        var svg2img = require('svg2img');
         svg2img(svg, options, callback);
     }
 };
