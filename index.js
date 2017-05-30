@@ -7,14 +7,14 @@
 /*global require:true*/
 /*global __dirname:true*/
 /*global console:true*/
+var os = require('os');
+var fs = require('fs');
+var path = require('path');
+var deepcopy = require('deepcopy');
+const cheerio = require('cheerio');
 
 var svg2imgElectron = function (svg, options, callback) {
     "use strict";
-
-    var os = require('os');
-    var fs = require('fs');
-    var path = require('path');
-    const cheerio = require('cheerio');
     var fallback = false;
     try {
         var canvas = require('canvas');
@@ -92,17 +92,16 @@ var svg2imgElectron = function (svg, options, callback) {
         win.webContents.once('did-finish-load', function () {
             win.capturePage(function (image) {
                 callback(null, image.toPNG({}));
-                win = null;
             });
         });
     };
     var electronFallback = function (svg, options, callback) {
-        var patchedCode = "";
-        if(typeof svg === 'undefined' || svg === null) {
-            callback(null, null);
+        if((svg.length < 10) || (typeof(svg) === 'undefined') || (svg === null)){
+            callback(null,void 0);
         }else{
+            var patchedCode = "";
             if (isSVGcode(svg)) {
-                patchedCode = patchCode(svg, options);
+                patchedCode = patchCode(code, options);
                 saveFileAndProcess(patchedCode, options, callback);
             } else {
                 fs.readFile(svg, function (err, data) {
@@ -114,7 +113,8 @@ var svg2imgElectron = function (svg, options, callback) {
     };
 
     if (fallback) {
-        electronFallback(svg, options, callback);
+        var code = deepcopy(svg);
+        electronFallback(code, options, callback);
     } else {
         var svg2img = require('svg2img');
         svg2img(svg, options, callback);
