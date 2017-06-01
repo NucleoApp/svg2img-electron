@@ -20,7 +20,9 @@
     "url": "https://github.com/sharpfuryz/svg2img-electron/issues"
   },
   "homepage": "https://github.com/sharpfuryz/svg2img-electron#readme",
-  "dependencies": {},
+  "dependencies": {
+    "canvg": "git+https://github.com/canvg/canvg.git"
+  },
   "devDependencies": {
     "electron": "^1.6.10",
     "jasmine": "^2.6.0"
