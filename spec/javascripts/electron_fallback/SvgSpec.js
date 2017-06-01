@@ -9,30 +9,10 @@ describe("Electron fallback", function() {
     it("Export is a function", function() {
         expect(typeof(instance)).toEqual('function');
     });
-    it("Cairo mode with svg code", function () {
-        instance(svgCode, {width: 64, height: 64}, function (err, data) {
-            expect(typeof(err)).toEqual("object");
-            expect(typeof(data)).toEqual("object");
-        });
-    });
-    it("Cairo mode with svg file", function () {
-        fs.writeFile(filepath, svgCode, function (fsErr) {
-            instance(filepath, {width: 64, height: 64}, function (err, data) {
-                expect(typeof(err)).toEqual("object");
-                expect(typeof(data)).toEqual("object");
-            });
-        });
-    });
-    it("Cairo mode with undefined code", function () {
-        instance("", {width: 64, height: 64}, function (err, data) {
-            expect(typeof(err)).toEqual("object");
-            expect(typeof(data)).toEqual("undefined");
-        });
-    });
     it("Fallback with undefined code", function () {
         instance("", {width: 64, height: 64, fallback: true}, function (err, data) {
             expect(typeof(err)).toEqual("object");
-            expect(typeof(data)).toEqual("undefined");
+            expect(typeof(data)).toEqual("object");
         });
     });
     it("Fallback with svg code", function () {

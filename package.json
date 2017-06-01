@@ -1,7 +1,7 @@
 {
   "name": "svg2img-electron",
-  "version": "1.0.6",
-  "description": "Wrapper of svg2img with fallback, based on electron-image-resize, for platforms which doesn't have cairo/pixman libraries. svg2img compatible.",
+  "version": "1.1.0",
+  "description": "SVG rasterizer based on Electron and canvg",
   "main": "index.js",
   "scripts": {
     "test": "jasmine spec/javascripts/electron_fallback/SvgSpec.js"
@@ -21,9 +21,7 @@
   },
   "homepage": "https://github.com/sharpfuryz/svg2img-electron#readme",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.1",
-    "deepcopy": "^0.6.3",
-    "svg2img": "^0.2.8"
+    "canvg": "0.0.8",
   },
   "devDependencies": {
     "electron": "^1.6.10",
