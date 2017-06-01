@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/sharpfuryz/svg2img-electron#readme",
   "dependencies": {
-    "canvg": "0.0.8",
+    "canvg": "0.0.8"
   },
   "devDependencies": {
     "electron": "^1.6.10",
