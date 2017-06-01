@@ -5,19 +5,20 @@
  */
 const url = require('url');
 const electron = require('electron');
-var BrowserWindow = electron.BrowserWindow || electron.remote.BrowserWindow;
+const ipcMain = electron.ipcMain;
+var BrowserWindow = electron.BrowserWindow;// || electron.remote.BrowserWindow;
 /*global require:true*/
 /*global __dirname:true*/
 /*global console:true*/
 var svg2imgElectron = function (svg, options) {
-    var os = require('os');
-    var fs = require('fs');
-    var path = require('path');
+    return new Promise(function (resolve) {
+        var os = require('os');
+        var fs = require('fs');
+        var path = require('path');
 
-    "use strict";
+        "use strict";
 
-    var electronProcess = function (code, options) {
-        return new Promise(function (resolve) {
+        var electronProcess = function (code, options) {
             var win = new BrowserWindow({
                 x: 0,
                 y: 0,
@@ -25,10 +26,7 @@ var svg2imgElectron = function (svg, options) {
                 height: options.height,
                 show: false,
                 frame: false,
-                enableLargerThanScreen: true,
-                webPreferences: {
-                    nodeIntegration: false
-                }
+                enableLargerThanScreen: true
             });
             win.once('closed', function () {
                 win = null;
@@ -39,50 +37,42 @@ var svg2imgElectron = function (svg, options) {
                 slashes: true
             }));
             win.webContents.once('did-finish-load', function () {
-                win.webContents.executeJavaScript('convert("'+code+'")').then(function(string){
-                    var regex = /^data:.+\/(.+);base64,(.*)$/;
-                    var matches = string.match(regex);
-                    var data = matches[2];
-                    var buffer = new Buffer(data, 'base64');
-                    resolve(buffer);
-                    win.close();
-                });
+                win.webContents.send('svg', code, options.width, options.height);
             });
-        });
-    };
+            ipcMain.once('svg', function(event, string) {
+                var regex = /^data:.+\/(.+);base64,(.*)$/;
+                var matches = string.match(regex);
+                var data = matches[2];
+                var buffer = new Buffer(data, 'base64');
+                win.close();
+                resolve(buffer);
+            });
+        };
 
-    return new Promise(function (resolve) {
-        if((svg.length < 10) || (typeof(svg) === 'undefined') || (svg === null)){
-            resolve(null,void 0);
+        if(svg.toLowerCase().indexOf('<svg') > -1){
+            electronProcess(svg, options);
         }else{
             fs.lstat(svg, function (err, stats){
                 if(err){
-                    resolve(null, void 0);
+                    console.log(err);
                 }
                 if(stats){
                     if(stats.isFile()){
-                        fs.readFile(svg, function (err, data) {
-                            if(err){
+                        fs.readFile(svg, function (IOerr, data) {
+                            if(IOerr){
                                 resolve(null);
                             }
-                            electronProcess(data, options).then(function (res) {
-                                resolve(res);
-                            });
+                            electronProcess(data, options);
                         });
                     }else{
-                        electronProcess(svg, options).then(function (data) {
-                            resolve(data);
-                        });
+                        electronProcess(svg, options);
                     }
                 }else{
-                    electronProcess(svg, options).then(function (data) {
-                        resolve(data);
-                    });
+                    electronProcess(svg, options);
                 }
             });
         }
     });
-
 };
 
 exports = module.exports = svg2imgElectron;
