@@ -24,7 +24,7 @@
     "canvg": "git+https://github.com/canvg/canvg.git"
   },
   "devDependencies": {
-    "electron": "^1.6.10",
-    "jasmine": "^2.6.0"
+    "jasmine": "^2.6.0",
+    "electron": "^1.6.10"
   }
 }
