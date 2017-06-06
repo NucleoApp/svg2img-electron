@@ -40,13 +40,13 @@ var svg2imgElectron = function (svg, options) {
                     slashes: true
                 }));
                 win.webContents.on('did-finish-load', function () {
-                    win.webContents.send('svg', code, options.width, options.height);
+                    win.webContents.send('svg', code, options.width, options.height, options.format);
                 });
             }else{
                 win.setSize(options.width, options.height);
-                win.webContents.send('svg', code, options.width, options.height);
+                win.webContents.send('svg', code, options.width, options.height, options.format);
             }
-            ipcMain.on('svg', function(event, string) {
+            ipcMain.once('svg', function(event, string) {
                 var regex = /^data:.+\/(.+);base64,(.*)$/;
                 var matches = string.match(regex);
                 var data = matches[2];

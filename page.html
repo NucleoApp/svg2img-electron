@@ -7,7 +7,10 @@
     </script>
     <script type="text/javascript">
         var ipcRenderer = require('electron').ipcRenderer;
-        ipcRenderer.on('svg', function (event, code, width, height) {
+        ipcRenderer.on('svg', function (event, code, width, height, format) {
+            if(typeof(format) === "undefined"){
+                format = 'image/png';
+            }
             var canvas = document.getElementById('canvas');
             if(width){
                 canvas.width = width;
@@ -16,7 +19,7 @@
             }else{
                 canvg('canvas', code);
             }
-            ipcRenderer.send('svg', canvas.toDataURL());
+            ipcRenderer.send('svg', canvas.toDataURL(format));
         });
     </script>
 </head>
