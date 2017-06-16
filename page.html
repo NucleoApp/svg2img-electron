@@ -6,7 +6,27 @@
         require('canvg');
     </script>
     <script type="text/javascript">
+        require('cheerio');
+    </script>
+    <script type="text/javascript" src="potrace.js"></script>
+    <script type="text/javascript">
         var ipcRenderer = require('electron').ipcRenderer;
+        ipcRenderer.on('potrace', function (event, path) {
+            function fixsvgCode(code){
+                var cheerio = require('cheerio');
+                var $ = cheerio.load(code, {xmlMode: true});
+                $('svg').find('[fill-rule="evenodd"]').removeAttr('fill-rule');
+                return $.xml().toString();
+            }
+            var svg;
+            Potrace.loadFromFS(path);
+            console.log(Potrace);
+            Potrace.process(function(){
+                svg = Potrace.getSVG(512, null);
+                svg = fixsvgCode(svg);
+                ipcRenderer.send('potrace', svg);
+            });
+        });
         ipcRenderer.on('svg', function (event, code, width, height, format) {
             if(typeof(format) === "undefined"){
                 format = 'image/png';

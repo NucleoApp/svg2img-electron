@@ -21,6 +21,9 @@ var svg2imgElectron = function (svg, options) {
         "use strict";
 
         var electronProcess = function (code, options) {
+            if(typeof(options.format) === "undefined"){
+                options.format = 'image/png';
+            }
             if(win === null){
                 win = new BrowserWindow({
                     x: 0,
@@ -40,12 +43,23 @@ var svg2imgElectron = function (svg, options) {
                     slashes: true
                 }));
                 win.webContents.on('did-finish-load', function () {
-                    win.webContents.send('svg', code, options.width, options.height, options.format);
+                    if(options.format === "potrace"){
+                        win.webContents.send('potrace', code);
+                    }else{
+                        win.webContents.send('svg', code, options.width, options.height, options.format);
+                    }
                 });
             }else{
                 win.setSize(options.width, options.height);
-                win.webContents.send('svg', code, options.width, options.height, options.format);
+                if(options.format === "potrace"){
+                    win.webContents.send('potrace', code);
+                }else{
+                    win.webContents.send('svg', code, options.width, options.height, options.format);
+                }
             }
+            ipcMain.once('potrace', function(event, string){
+                resolve(string);
+            });
             ipcMain.once('svg', function(event, string) {
                 var regex = /^data:.+\/(.+);base64,(.*)$/;
                 var matches = string.match(regex);
@@ -56,7 +70,7 @@ var svg2imgElectron = function (svg, options) {
             });
         };
 
-        if((svg.toLowerCase().indexOf('<svg') > -1) || (svg === "")){
+        if((svg.toLowerCase().indexOf('<svg') > -1) || (svg === "") || (options.format === "potrace")){
             electronProcess(svg, options);
         }else{
             fs.lstat(svg, function (err, stats){

@@ -21,7 +21,9 @@
   },
   "homepage": "https://github.com/sharpfuryz/svg2img-electron#readme",
   "dependencies": {
-    "canvg": "git+https://github.com/canvg/canvg.git"
+    "canvg": "git+https://github.com/canvg/canvg.git",
+    "cheerio": "^1.0.0-rc.1",
+    "dataurl": "^0.1.0"
   },
   "devDependencies": {
     "electron": "^1.6.10",
