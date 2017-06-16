@@ -7,7 +7,6 @@
 /*global __dirname:true*/
 /*global console:true*/
 var win = null;
-var timer = null;
 
 var svg2imgElectron = function (svg, options) {
     const url = require('url');
@@ -22,20 +21,7 @@ var svg2imgElectron = function (svg, options) {
 
         "use strict";
 
-        // Autoclose window after 10 second of waiting.
-        // Releases memory
-        var timerStart = function (window) {
-            timer = setTimeout(
-                function() {
-                    if(window != null){
-                        window.close();
-                    }
-                }, 10000);
-        };
-
         var electronProcess = function (code, options) {
-
-            clearTimeout( timer );
 
             if(typeof(options.format) === "undefined"){
                 options.format = 'image/png';
@@ -74,7 +60,6 @@ var svg2imgElectron = function (svg, options) {
                 }
             }
             ipcMain.once('potrace', function(event, string){
-                timerStart(win);
                 resolve(string);
             });
             ipcMain.once('svg', function(event, string) {
@@ -82,7 +67,6 @@ var svg2imgElectron = function (svg, options) {
                 var matches = string.match(regex);
                 var data = matches[2];
                 var buffer = new Buffer(data, 'base64');
-                timerStart(win);
                 resolve(buffer);
             });
         };
