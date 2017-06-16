@@ -20,7 +20,6 @@
             }
             var svg;
             Potrace.loadFromFS(path);
-            console.log(Potrace);
             Potrace.process(function(){
                 svg = Potrace.getSVG(1, null);
                 svg = fixsvgCode(svg);
