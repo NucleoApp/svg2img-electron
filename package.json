@@ -15,7 +15,7 @@
     "electron"
   ],
   "author": "Dmytro",
-  "license": "MIT",
+  "license": "GPL",
   "bugs": {
     "url": "https://github.com/sharpfuryz/svg2img-electron/issues"
   },
