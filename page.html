@@ -11,7 +11,7 @@
     <script type="text/javascript" src="potrace.js"></script>
     <script type="text/javascript">
         var ipcRenderer = require('electron').ipcRenderer;
-        ipcRenderer.on('potrace', function (event, path) {
+        ipcRenderer.on('potrace', function (event, path, winId) {
             function fixsvgCode(code){
                 var cheerio = require('cheerio');
                 var $ = cheerio.load(code, {xmlMode: true});
@@ -23,10 +23,10 @@
             Potrace.process(function(){
                 svg = Potrace.getSVG(1, null);
                 svg = fixsvgCode(svg);
-                ipcRenderer.send('potrace', svg);
+                ipcRenderer.send('potrace', svg, winId);
             });
         });
-        ipcRenderer.on('svg', function (event, code, width, height, format) {
+        ipcRenderer.on('svg', function (event, code, width, height, format, winId) {
             if(typeof(format) === "undefined"){
                 format = 'image/png';
             }
@@ -38,7 +38,7 @@
             }else{
                 canvg('canvas', code);
             }
-            ipcRenderer.send('svg', canvas.toDataURL(format));
+            ipcRenderer.send('svg', canvas.toDataURL(format), winId);
         });
     </script>
 </head>
