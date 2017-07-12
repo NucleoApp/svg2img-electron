@@ -12,7 +12,7 @@
             Potrace.loadFromFS(path);
             Potrace.process(function(){
                 var svg = Potrace.getSVG(1, null);
-                ipcRenderer.send(('potrace'+uuid), svg, 1);
+                ipcRenderer.send(('potrace'+uuid), svg, 2);
             });
         });
         ipcRenderer.on('svg', function (event, code, width, height, format, uuid) {
@@ -27,7 +27,7 @@
             }else{
                 canvg('canvas', code);
             }
-            ipcRenderer.send(('svg'+uuid), canvas.toDataURL(format), 1);
+            ipcRenderer.send(('svg'+uuid), canvas.toDataURL(format), 2);
         });
     </script>
 </head>

@@ -16,49 +16,20 @@ var svg2imgElectron = function (svg, options) {
     const electron = require('electron');
     const ipcMain = electron.ipcMain;
     const os = require('os');
-    const fs = require('fs');
+    const fs = require('graceful-fs');
     const path = require('path');
     const BrowserWindow = electron.BrowserWindow;
-    return new Promise(function (resolve) {
 
-        "use strict";
-
-        var putWindowTwo = function(code, options){
-            if(winTwo === null){
-                winTwo = new BrowserWindow({
-                    x: 0,
-                    y: 0,
-                    width: options.width,
-                    height: options.height,
-                    show: false,
-                    frame: false,
-                    enableLargerThanScreen: true
-                });
-                winTwo.once('closed', function () {
-                    winTwo = null;
-                });
-                winTwo.loadURL(url.format({
-                    pathname: path.resolve(__dirname,'page.html'),
-                    protocol: 'file:',
-                    slashes: true
-                }));
-                winTwo.webContents.on('did-finish-load', function () {
-                    if(options.format === "potrace"){
-                        winTwo.webContents.send('potrace', code, 2);
-                    }else{
-                        winTwo.webContents.send('svg', code, options.width, options.height, options.format, 2);
-                    }
-                });
-            }else{
-                winTwo.setSize(options.width, options.height);
-                if(options.format === "potrace"){
-                    winTwo.webContents.send('potrace', code, 2);
-                }else{
-                    winTwo.webContents.send('svg', code, options.width, options.height, options.format, 2);
-                }
-            }
-        };
-        var putWindowOne = function(code, options) {
+    var getAction = function(options) {
+        if(typeof(options.format) === "undefined"){
+            options.format = 'image/png';
+            return 'rasterization';
+        }else{
+            return options.format;
+        }
+    }
+    var getWindowOne = function(options) {
+        return new Promise((resolve)=>{
             if(winOne === null){
                 winOne = new BrowserWindow({
                     x: 0,
@@ -78,77 +49,116 @@ var svg2imgElectron = function (svg, options) {
                     slashes: true
                 }));
                 winOne.webContents.on('did-finish-load', function () {
-                    if(options.format === "potrace"){
-                        winOne.webContents.send('potrace', code, 1);
-                    }else{
-                        winOne.webContents.send('svg', code, options.width, options.height, options.format, 1);
-                    }
+                    resolve(winOne);
                 });
             }else{
                 winOne.setSize(options.width, options.height);
-                if(options.format === "potrace"){
-                    winOne.webContents.send('potrace', code, 1);
-                }else{
-                    winOne.webContents.send('svg', code, options.width, options.height, options.format, 1);
-                }
+                resolve(winOne);
             }
-        };
-
-        var electronProcess = function (code, options) {
-            if(typeof(options.format) === "undefined"){
-                options.format = 'image/png';
-            }
-            if(windowOneBusy){
-                windowTwoBusy = true;
-                putWindowTwo(code,options);
+        });
+    }
+    var getWindowTwo = function(options) {
+        return new Promise((resolve)=>{
+            if(winTwo === null){
+                winTwo = new BrowserWindow({
+                    x: 0,
+                    y: 0,
+                    width: options.width,
+                    height: options.height,
+                    show: false,
+                    frame: false,
+                    enableLargerThanScreen: true
+                });
+                // winTwo.openDevTools();
+                winTwo.once('closed', function () {
+                    winTwo = null;
+                });
+                winTwo.loadURL(url.format({
+                    pathname: path.resolve(__dirname,'page2.html'),
+                    protocol: 'file:',
+                    slashes: true
+                }));
+                winTwo.webContents.on('did-finish-load', function () {
+                    resolve(winTwo);
+                });
             }else{
-                windowOneBusy = true;
-                putWindowOne(code, options);
+                winTwo.setSize(options.width, options.height);
+                resolve(winTwo);
             }
-            ipcMain.once('potrace', function(event, string, winId){
-                if(winId == 1){
-                    windowOneBusy = false;
+        });
+    }
+    var getWindow = function(options){
+        return new Promise((resolve)=>{
+            if(windowOneBusy == true){
+                if(windowTwoBusy == false){
+                    windowTwoBusy = true;
+                    getWindowTwo(options).then((window)=>{
+                        resolve(window)
+                    });
                 }else{
-                    windowTwoBusy = false;
                 }
-                resolve(string);
-            });
-            ipcMain.once('svg', function(event, string, winId) {
-                var regex = /^data:.+\/(.+);base64,(.*)$/;
-                var matches = string.match(regex);
-                var data = matches[2];
-                var buffer = new Buffer(data, 'base64');
-                if(winId == 1){
-                    windowOneBusy = false;
+            }else{
+                if(windowOneBusy == true){
                 }else{
-                    windowTwoBusy = false;
+                    windowOneBusy = true;
+                    getWindowOne(options).then((window)=>{
+                        resolve(window)
+                    });
                 }
-                resolve(buffer);
-            });
+            }
+        });
+    }
 
-        };
-
-        if((svg.toLowerCase().indexOf('<svg') > -1) || (svg === "") || (options.format === "potrace")){
-            electronProcess(svg, options);
-        }else{
-            fs.lstat(svg, function (err, stats){
-                if(err){
-                    console.log(err);
-                }
-                if(stats){
-                    if(stats.isFile()){
-                        fs.readFile(svg, function (IOerr, data) {
-                            if(IOerr){
-                                resolve(null);
+    return new Promise((c_resolve) => {
+        var action = getAction(options);
+        var code = svg;
+        var invoke = function(action, code){
+            var uuid = Math.round(Math.random() * 1000);
+            return new Promise((resolve)=>{
+                getWindow(options).then((window)=>{
+                    if(action === 'svg' || action === "rasterization"){
+                        window.webContents.send('svg', code, options.width, options.height, options.format, uuid);
+                        ipcMain.once('svg'+uuid, (event, string, winId)=>{
+                            if(winId === 1){
+                                windowOneBusy = false;
+                            }else{
+                                windowTwoBusy = false;
                             }
-                            electronProcess(data, options);
+                            var regex = /^data:.+\/(.+);base64,(.*)$/;
+                            var matches = string.match(regex);
+                            var data = matches[2];
+                            var buffer = new Buffer(data, 'base64');
+                            resolve(buffer);
                         });
-                    }else{
-                        electronProcess(svg, options);
                     }
-                }else{
-                    electronProcess(svg, options);
-                }
+                    if(action === 'potrace'){
+                        var evName = 'potrace'+uuid;
+                        window.webContents.send('potrace', code, uuid);
+                        ipcMain.once(evName, (event, string, winId)=>{
+                            if(winId === 1){
+                                windowOneBusy = false;
+                            }else{
+                                windowTwoBusy = false;
+                            }
+                            resolve(string);
+                        });
+                    }
+
+                });
+            })
+        }
+        if(action === 'full_potrace'){
+            var temp = (options.tmpdir || os.tmpdir()) + path.sep + Math.round(Math.random() * 10000) + '.png';
+            invoke('svg', svg).then((buffer)=>{
+                fs.writeFile(temp, buffer, (err)=>{
+                   invoke('potrace', temp).then((data)=>{
+                       c_resolve(data);
+                   })
+                });
+            });
+        }else{
+            invoke(action).then((r)=>{
+                c_resolve(r);
             });
         }
     });

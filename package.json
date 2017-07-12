@@ -1,6 +1,6 @@
 {
   "name": "svg2img-electron",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "SVG rasterizer based on Electron and canvg",
   "main": "index.js",
   "scripts": {
