@@ -27,7 +27,7 @@ var svg2imgElectron = function (svg, options) {
         }else{
             return options.format;
         }
-    }
+    };
     var getWindowOne = function(options) {
         return new Promise((resolve)=>{
             if(winOne === null){
@@ -56,7 +56,7 @@ var svg2imgElectron = function (svg, options) {
                 resolve(winOne);
             }
         });
-    }
+    };
     var getWindowTwo = function(options) {
         return new Promise((resolve)=>{
             if(winTwo === null){
@@ -86,7 +86,7 @@ var svg2imgElectron = function (svg, options) {
                 resolve(winTwo);
             }
         });
-    }
+    };
     var getWindow = function(options){
         return new Promise((resolve)=>{
             if(windowOneBusy == true){
@@ -107,7 +107,36 @@ var svg2imgElectron = function (svg, options) {
                 }
             }
         });
-    }
+    };
+
+    var checkCode = function(input_code) {
+        return new Promise((resolve)=>{
+            if((input_code.toLowerCase().indexOf('<svg') > -1) || (input_code === "")){
+                resolve(input_code);
+            }else{
+                fs.lstat(input_code, function (err, stats){
+                    if(err){
+                        console.log(err);
+                        resolve("");
+                    }
+                    if(stats){
+                        if(stats.isFile()){
+                            fs.readFile(input_code, function (IOerr, data) {
+                                if(IOerr){
+                                    resolve("");
+                                }
+                                resolve(input_code);
+                            });
+                        }else{
+                            resolve(input_code);
+                        }
+                    }else{
+                        resolve(input_code);
+                    }
+                });
+            }
+        })
+    };
 
     return new Promise((c_resolve) => {
         var action = getAction(options);
@@ -117,18 +146,20 @@ var svg2imgElectron = function (svg, options) {
             return new Promise((resolve)=>{
                 getWindow(options).then((window)=>{
                     if(action === 'svg' || action === "rasterization"){
-                        window.webContents.send('svg', code, options.width, options.height, options.format, uuid);
-                        ipcMain.once('svg'+uuid, (event, string, winId)=>{
-                            if(winId === 1){
-                                windowOneBusy = false;
-                            }else{
-                                windowTwoBusy = false;
-                            }
-                            var regex = /^data:.+\/(.+);base64,(.*)$/;
-                            var matches = string.match(regex);
-                            var data = matches[2];
-                            var buffer = new Buffer(data, 'base64');
-                            resolve(buffer);
+                        checkCode(code).then((code)=>{
+                            window.webContents.send('svg', code, options.width, options.height, options.format, uuid);
+                            ipcMain.once('svg'+uuid, (event, string, winId)=>{
+                                if(winId === 1){
+                                    windowOneBusy = false;
+                                }else{
+                                    windowTwoBusy = false;
+                                }
+                                var regex = /^data:.+\/(.+);base64,(.*)$/;
+                                var matches = string.match(regex);
+                                var data = matches[2];
+                                var buffer = new Buffer(data, 'base64');
+                                resolve(buffer);
+                            });
                         });
                     }
                     if(action === 'potrace'){
