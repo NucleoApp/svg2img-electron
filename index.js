@@ -21,11 +21,15 @@ var svg2imgElectron = function (svg, options) {
     const BrowserWindow = electron.BrowserWindow;
 
     var getAction = function(options) {
-        if(typeof(options.format) === "undefined"){
+        if((typeof(options.format) === "undefined")){
             options.format = 'image/png';
             return 'rasterization';
         }else{
-            return options.format;
+            if(options.format.indexOf('image') > -1){
+                return 'rasterization';
+            }else{
+                return options.format;
+            }
         }
     };
     var getWindowOne = function(options) {
@@ -188,7 +192,7 @@ var svg2imgElectron = function (svg, options) {
                 });
             });
         }else{
-            invoke(action).then((r)=>{
+            invoke(action, svg).then((r)=>{
                 c_resolve(r);
             });
         }
