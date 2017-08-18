@@ -172,8 +172,10 @@ var svg2imgElectron = function (svg, options) {
                             if(string === ""){
                                 if(winId === 1){
                                     winOne = null;
+                                    winOne.close();
                                 }else{
                                     winTwo = null;
+                                    winTwo.close();
                                 }
                             }
                             if(winId === 1){
