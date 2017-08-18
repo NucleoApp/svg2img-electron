@@ -99,7 +99,6 @@ var svg2imgElectron = function (svg, options) {
                     getWindowTwo(options).then((window)=>{
                         resolve(window)
                     });
-                }else{
                 }
             }else{
                 if(windowOneBusy == true){
@@ -170,6 +169,13 @@ var svg2imgElectron = function (svg, options) {
                         var evName = 'potrace'+uuid;
                         window.webContents.send('potrace', code, uuid);
                         ipcMain.once(evName, (event, string, winId)=>{
+                            if(string === ""){
+                                if(winId === 1){
+                                    winOne = null;
+                                }else{
+                                    winTwo = null;
+                                }
+                            }
                             if(winId === 1){
                                 windowOneBusy = false;
                             }else{
