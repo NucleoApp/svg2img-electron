@@ -171,11 +171,11 @@ var svg2imgElectron = function (svg, options) {
                         ipcMain.once(evName, (event, string, winId)=>{
                             if(string === ""){
                                 if(winId === 1){
-                                    winOne = null;
                                     winOne.close();
+                                    winOne = null;
                                 }else{
-                                    winTwo = null;
                                     winTwo.close();
+                                    winTwo = null;
                                 }
                             }
                             if(winId === 1){
