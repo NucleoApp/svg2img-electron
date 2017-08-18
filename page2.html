@@ -11,7 +11,7 @@
         ipcRenderer.on('potrace', function (event, path, uuid) {
             var timer = setTimeout(function () {
                 clearTimeout(timer);
-                ipcRenderer.send(('potrace'+uuid), "", 1);
+                ipcRenderer.send(('potrace'+uuid), "", 2);
             }, 5000);
             Potrace.loadFromFS(path);
             Potrace.process(function(){
