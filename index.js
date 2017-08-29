@@ -200,9 +200,19 @@ var svg2imgElectron = function (svg, options) {
                 });
             });
         }else{
-            invoke(action, svg).then((r)=>{
-                c_resolve(r);
-            });
+            if(action === 'kill_windows'){
+                new Promise((resolve)=>{
+                    winOne.close();
+                    winTwo.close();
+                    windowOneBusy = false;
+                    windowTwoBusy = false;
+                    resolve();
+                });
+            }else{
+                invoke(action, svg).then((r)=>{
+                    c_resolve(r);
+                });
+            }
         }
     });
 };
