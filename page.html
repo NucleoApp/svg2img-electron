@@ -9,10 +9,6 @@
     <script type="text/javascript">
         var ipcRenderer = require('electron').ipcRenderer;
         ipcRenderer.on('potrace', function (event, path, uuid) {
-            var timer = setTimeout(function () {
-                clearTimeout(timer);
-                ipcRenderer.send(('potrace'+uuid), "", 1);
-            }, 5000);
             Potrace.loadFromFS(path);
             Potrace.process(function(){
                 var svg = Potrace.getSVG(1, null);
