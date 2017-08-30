@@ -1,9 +1,10 @@
 {
   "name": "svg2img-electron",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "SVG rasterizer based on Electron and canvg",
   "main": "index.js",
   "scripts": {
+    "build:": "grunt ELECTRON_RUN_AS_NODE=true",
     "test": "jasmine spec/javascripts/electron_fallback/SvgSpec.js"
   },
   "repository": {
@@ -23,10 +24,17 @@
   "dependencies": {
     "canvg": "git+https://github.com/canvg/canvg.git",
     "cheerio": "^1.0.0-rc.1",
-    "dataurl": "^0.1.0"
+    "dataurl": "^0.1.0",
+    "grunt-contrib-coffee": "^1.0.0",
+    "mocha": "^3.5.0"
   },
   "devDependencies": {
+    "chai": "^4.1.1",
     "electron": "^1.6.10",
+    "grunt": "^1.0.1",
+    "grunt-mocha-test": "^0.13.2",
+    "inspect": "0.0.2",
+    "inspector": "^0.5.0",
     "jasmine": "^2.6.0"
   }
 }
