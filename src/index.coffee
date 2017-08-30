@@ -80,6 +80,12 @@ windowManager =
       global.winTwo.close()
       global.windowTwoBusy = false
 
+  killAllWindows: ->
+    global.winOne.close()
+    global.windowOneBusy = false
+    global.winTwo.close()
+    global.windowTwoBusy = false
+
   getWindow: (options) ->
     ctx = @
     new Promise((resolve) ->
@@ -141,8 +147,11 @@ svg2imgElectron = (svg, options) ->
             resolve formBase64(string)
     )
 
-  invokePotrace = (code, options)->
+  invokePotrace = (code, options, step = 1)->
     new Promise((resolve)->
+      if step > 3
+        console.log 'Icon' + code + 'broken, exiting upon 3 attemps'
+        resolve('')
       windowManager.getWindow(options).then (window)->
         uuid = getUUID()
         evName = 'potrace' + uuid
@@ -150,7 +159,8 @@ svg2imgElectron = (svg, options) ->
         timer = setTimeout ( ->
           clearTimeout(timer)
           windowManager.killWindow(window.id)
-          invokePotrace(code, options).then (string)->
+          step += 1
+          invokePotrace(code, options, step).then (string)->
             resolve(string)
         ), 8000
         ipcMain.once evName, (event, string, winId) ->
@@ -170,8 +180,12 @@ svg2imgElectron = (svg, options) ->
           return
         return
     else
-      invokeSVG(svg, options).then (r) ->
-        c_resolve r
+      if action is 'kill_windows'
+        windowManager.killAllWindows()
+        c_resolve null
+      else
+        invokeSVG(svg, options).then (r) ->
+          c_resolve r
     return
   )
 

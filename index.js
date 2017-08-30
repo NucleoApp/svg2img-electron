@@ -101,6 +101,12 @@
         return global.windowTwoBusy = false;
       }
     },
+    killAllWindows: function() {
+      global.winOne.close();
+      global.windowOneBusy = false;
+      global.winTwo.close();
+      return global.windowTwoBusy = false;
+    },
     getWindow: function(options) {
       var ctx;
       ctx = this;
@@ -172,8 +178,15 @@
         });
       });
     };
-    invokePotrace = function(code, options) {
+    invokePotrace = function(code, options, step) {
+      if (step == null) {
+        step = 1;
+      }
       return new Promise(function(resolve) {
+        if (step > 3) {
+          console.log('Icon' + code + 'broken, exiting upon 3 attemps');
+          resolve('');
+        }
         return windowManager.getWindow(options).then(function(window) {
           var evName, timer, uuid;
           uuid = getUUID();
@@ -181,10 +194,9 @@
           window.webContents.send('potrace', code, uuid);
           timer = setTimeout((function() {
             clearTimeout(timer);
-            console.log('timeout');
             windowManager.killWindow(window.id);
-            return invokePotrace(code, options).then(function(string) {
-              console.log('going deep!');
+            step += 1;
+            return invokePotrace(code, options, step).then(function(string) {
               return resolve(string);
             });
           }), 8000);
@@ -209,9 +221,14 @@
           });
         });
       } else {
-        invokeSVG(svg, options).then(function(r) {
-          return c_resolve(r);
-        });
+        if (action === 'kill_windows') {
+          windowManager.killAllWindows();
+          c_resolve(null);
+        } else {
+          invokeSVG(svg, options).then(function(r) {
+            return c_resolve(r);
+          });
+        }
       }
     });
   };

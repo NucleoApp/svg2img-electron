@@ -5,7 +5,6 @@ module.exports = (grunt) ->
         files:
           'index.js': ['src/index.coffee']
           'checkCode.js': ['src/checkCode.coffee']
-          'windowManager.js': ['src/windowManager.coffee']
     mochaTest:
       options:
         reporter: 'nyan'
