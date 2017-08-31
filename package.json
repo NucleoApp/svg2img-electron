@@ -24,13 +24,13 @@
   "dependencies": {
     "canvg": "git+https://github.com/canvg/canvg.git",
     "cheerio": "^1.0.0-rc.1",
-    "dataurl": "^0.1.0",
-    "grunt-contrib-coffee": "^1.0.0",
-    "mocha": "^3.5.0"
+    "dataurl": "^0.1.0"
   },
   "devDependencies": {
     "chai": "^4.1.1",
     "electron": "^1.6.10",
+    "grunt-contrib-coffee": "^1.0.0",
+    "mocha": "^3.5.0",
     "grunt": "^1.0.1",
     "grunt-mocha-test": "^0.13.2",
     "inspect": "0.0.2",
