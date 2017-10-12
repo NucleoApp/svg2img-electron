@@ -1,6 +1,6 @@
 {
   "name": "svg2img-electron",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "SVG rasterizer based on Electron and canvg",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/sharpfuryz/svg2img-electron#readme",
   "dependencies": {
-    "canvg": "git+https://github.com/canvg/canvg.git",
     "cheerio": "^1.0.0-rc.1",
     "dataurl": "^0.1.0"
   },

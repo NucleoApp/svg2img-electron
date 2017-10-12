@@ -152,7 +152,15 @@ svg2imgElectron = (svg, options, log = defaultLog) ->
         options.format
   #
   getUUID = ->
-    Math.round(Math.random() * 1000000)
+    charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    len = 10
+    randomString = ''
+    i = 0
+    while i < len
+      randomPoz = Math.floor(Math.random() * charSet.length)
+      randomString += charSet.substring(randomPoz, randomPoz + 1)
+      i++
+    return randomString
   #
   invokeSVG = (svg, options) ->
     new Promise((resolve) ->
