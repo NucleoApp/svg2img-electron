@@ -109,12 +109,20 @@ windowManager =
     else
       global.windowTwoBusy = false
 
+roundWidthHeight = (options) ->
+  if options.width
+    options.width = Math.round(width)
+  if options.height
+    options.height = Math.round(height)
+  options
+  
 svg2imgElectron = (svg, options) ->
   electron = require('electron')
   ipcMain = electron.ipcMain
   os = require('os')
   fs = require('graceful-fs')
   checkCode = require './checkCode'
+  options = roundWidthHeight(options)
 
   formBase64 = (string)->
     regex = /^data:.+\/(.+);base64,(.*)$/
@@ -162,7 +170,7 @@ svg2imgElectron = (svg, options) ->
           step += 1
           invokePotrace(code, options, step).then (string)->
             resolve(string)
-        ), 8000
+        ), 3000
         ipcMain.once evName, (event, string, winId) ->
           windowManager.releaseWindow(winId)
           clearTimeout(timer)
