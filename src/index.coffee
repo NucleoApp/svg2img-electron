@@ -19,7 +19,7 @@ BrowserWindow = electron.BrowserWindow
 
 windowManager =
   getWindowOne: (options) ->
-    new Promise((resolve) ->
+    new Promise((resolve, reject) ->
       if global.winOne == null
         global.winOne = new BrowserWindow(
           x: 0
@@ -38,7 +38,9 @@ windowManager =
           slashes: true)
         global.winOne.webContents.on 'did-finish-load', ->
           resolve winOne
-          return
+        global.winOne.webContents.on 'did-fail-load', (event, errorCode, errorDescription) ->
+          reject errorDescription
+        return
       else
         global.winOne.setSize options.width, options.height
         resolve winOne
@@ -46,7 +48,7 @@ windowManager =
     )
 
   getWindowTwo: (options) ->
-    new Promise((resolve) ->
+    new Promise((resolve, reject) ->
       if global.winTwo == null
         global.winTwo = new BrowserWindow(
           x: 0
@@ -66,6 +68,8 @@ windowManager =
           slashes: true)
         global.winTwo.webContents.on 'did-finish-load', ->
           resolve winTwo
+        global.winTwo.webContents.on 'did-fail-load', (event, errorCode, errorDescription) ->
+          reject errorDescription
           return
       else
         global.winTwo.setSize options.width, options.height
@@ -88,22 +92,28 @@ windowManager =
 
   getWindow: (options) ->
     ctx = @
-    new Promise((resolve) ->
+    new Promise((resolve, reject) ->
       if global.windowOneBusy
 #        unless global.windowTwoBusy
           global.windowTwoBusy = true
-          ctx.getWindowTwo(options).then (window) ->
+          ctx.getWindowTwo(options).then( (window) ->
             resolve window
-            return
+          ).catch( (err) ->
+            reject err
+          )
+          return
       else
         global.windowOneBusy = true
-        ctx.getWindowOne(options).then (window) ->
+        ctx.getWindowOne(options).then((window) ->
           resolve window
-          return
+        ).catch((err) ->
+          reject err
+        )
+        return
       return
     )
 
-  releaseWindow: (winId)->
+  releaseWindow: (winId) ->
     if winId == 1
       global.windowOneBusy = false
     else
@@ -116,7 +126,11 @@ roundWidthHeight = (options) ->
     options.height = Math.round(height)
   options
   
-svg2imgElectron = (svg, options) ->
+defaultLog =
+  warn = (str) ->
+    console.log str
+
+svg2imgElectron = (svg, options, log = defaultLog) ->
   electron = require('electron')
   ipcMain = electron.ipcMain
   os = require('os')
@@ -124,7 +138,7 @@ svg2imgElectron = (svg, options) ->
   checkCode = require './checkCode'
   options = roundWidthHeight(options)
 
-  formBase64 = (string)->
+  formBase64 = (string) ->
     regex = /^data:.+\/(.+);base64,(.*)$/
     matches = string.match(regex)
     data = matches[2]
@@ -142,39 +156,43 @@ svg2imgElectron = (svg, options) ->
         options.format
   #
   getUUID = ->
-    Math.round(Math.random() * 1000)
+    Math.round(Math.random() * 1000000)
   #
-  invokeSVG = (svg, options)->
-    new Promise((resolve)->
-      windowManager.getWindow(options).then (window)->
-        checkCode(svg).then (code)->
+  invokeSVG = (svg, options) ->
+    new Promise((resolve) ->
+      windowManager.getWindow(options).then((window) ->
+        checkCode(svg).then (code) ->
           uuid = getUUID()
           window.webContents.send 'svg', code, options.width, options.height, options.format, uuid
-          ipcMain.once 'svg' + uuid, (event, string, winId) ->
+          ipcMain.once "svg#{uuid}", (event, string, winId) ->
             windowManager.releaseWindow(winId)
             resolve formBase64(string)
+      ).catch (err) ->
+        resolve err
     )
 
-  invokePotrace = (code, options, step = 1)->
-    new Promise((resolve)->
+  invokePotrace = (code, options, step = 1) ->
+    new Promise((resolve) ->
       if step > 3
-        console.log 'Icon' + code + 'broken, exiting upon 3 attemps'
+        log.warn 'Icon' + code + 'broken, exiting upon 3 attemps'
         resolve('')
-      windowManager.getWindow(options).then (window)->
+      windowManager.getWindow(options).then((window) ->
         uuid = getUUID()
-        evName = 'potrace' + uuid
+        evName = "potrace#{uuid}"
         window.webContents.send 'potrace', code, uuid
         timer = setTimeout ( ->
           clearTimeout(timer)
           windowManager.killWindow(window.id)
           step += 1
-          invokePotrace(code, options, step).then (string)->
+          invokePotrace(code, options, step).then (string) ->
             resolve(string)
         ), 3000
         ipcMain.once evName, (event, string, winId) ->
           windowManager.releaseWindow(winId)
           clearTimeout(timer)
           resolve(string)
+      ).catch (err) ->
+        resolve err
     )
 
   return new Promise((c_resolve) ->
