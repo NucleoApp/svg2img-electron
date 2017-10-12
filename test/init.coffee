@@ -5,9 +5,9 @@ svgCode = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBo
 describe 'svg2img-electron', ->
   it 'should be a function', ->
     expect(instance).to.be.a('function')
-  it 'should at least work', (done)->
+  it 'should at least work', (done) ->
     @.timeout(5000)
-    instance(svgCode, {width: 64, height: 64}).then (result)->
+    instance(svgCode, {width: 64, height: 63.5}).then (result)->
       console.log 'AAAA'
       console.log result
       done()

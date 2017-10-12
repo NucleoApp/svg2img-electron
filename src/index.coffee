@@ -121,9 +121,9 @@ windowManager =
 
 roundWidthHeight = (options) ->
   if options.width
-    options.width = Math.round(width)
+    options.width = Math.round(options.width)
   if options.height
-    options.height = Math.round(height)
+    options.height = Math.round(options.height)
   options
   
 defaultLog =

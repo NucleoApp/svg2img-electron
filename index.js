@@ -15,7 +15,7 @@
 /*global console:true */
 
 (function() {
-  var BrowserWindow, electron, exports, path, svg2imgElectron, url, windowManager;
+  var BrowserWindow, defaultLog, electron, exports, path, roundWidthHeight, svg2imgElectron, url, warn, windowManager;
 
   global.winOne = null;
 
@@ -35,7 +35,7 @@
 
   windowManager = {
     getWindowOne: function(options) {
-      return new Promise(function(resolve) {
+      return new Promise(function(resolve, reject) {
         if (global.winOne === null) {
           global.winOne = new BrowserWindow({
             x: 0,
@@ -55,8 +55,12 @@
             slashes: true
           }));
           global.winOne.webContents.on('did-finish-load', function() {
-            resolve(winOne);
+            return resolve(winOne);
           });
+          global.winOne.webContents.on('did-fail-load', function(event, errorCode, errorDescription) {
+            return reject(errorDescription);
+          });
+          return;
         } else {
           global.winOne.setSize(options.width, options.height);
           resolve(winOne);
@@ -64,7 +68,7 @@
       });
     },
     getWindowTwo: function(options) {
-      return new Promise(function(resolve) {
+      return new Promise(function(resolve, reject) {
         if (global.winTwo === null) {
           global.winTwo = new BrowserWindow({
             x: 0,
@@ -84,7 +88,10 @@
             slashes: true
           }));
           global.winTwo.webContents.on('did-finish-load', function() {
-            resolve(winTwo);
+            return resolve(winTwo);
+          });
+          global.winTwo.webContents.on('did-fail-load', function(event, errorCode, errorDescription) {
+            reject(errorDescription);
           });
         } else {
           global.winTwo.setSize(options.width, options.height);
@@ -110,17 +117,23 @@
     getWindow: function(options) {
       var ctx;
       ctx = this;
-      return new Promise(function(resolve) {
+      return new Promise(function(resolve, reject) {
         if (global.windowOneBusy) {
           global.windowTwoBusy = true;
           ctx.getWindowTwo(options).then(function(window) {
-            resolve(window);
+            return resolve(window);
+          })["catch"](function(err) {
+            return reject(err);
           });
+          return;
         } else {
           global.windowOneBusy = true;
           ctx.getWindowOne(options).then(function(window) {
-            resolve(window);
+            return resolve(window);
+          })["catch"](function(err) {
+            return reject(err);
           });
+          return;
         }
       });
     },
@@ -133,13 +146,31 @@
     }
   };
 
-  svg2imgElectron = function(svg, options) {
+  roundWidthHeight = function(options) {
+    if (options.width) {
+      options.width = Math.round(options.width);
+    }
+    if (options.height) {
+      options.height = Math.round(options.height);
+    }
+    return options;
+  };
+
+  defaultLog = warn = function(str) {
+    return console.log(str);
+  };
+
+  svg2imgElectron = function(svg, options, log) {
     var checkCode, formBase64, fs, getAction, getUUID, invokePotrace, invokeSVG, ipcMain, os;
+    if (log == null) {
+      log = defaultLog;
+    }
     electron = require('electron');
     ipcMain = electron.ipcMain;
     os = require('os');
     fs = require('graceful-fs');
     checkCode = require('./checkCode');
+    options = roundWidthHeight(options);
     formBase64 = function(string) {
       var buffer, data, matches, regex;
       regex = /^data:.+\/(.+);base64,(.*)$/;
@@ -161,7 +192,7 @@
       }
     };
     getUUID = function() {
-      return Math.round(Math.random() * 1000);
+      return Math.round(Math.random() * 1000000);
     };
     invokeSVG = function(svg, options) {
       return new Promise(function(resolve) {
@@ -170,11 +201,13 @@
             var uuid;
             uuid = getUUID();
             window.webContents.send('svg', code, options.width, options.height, options.format, uuid);
-            return ipcMain.once('svg' + uuid, function(event, string, winId) {
+            return ipcMain.once("svg" + uuid, function(event, string, winId) {
               windowManager.releaseWindow(winId);
               return resolve(formBase64(string));
             });
           });
+        })["catch"](function(err) {
+          return resolve(err);
         });
       });
     };
@@ -184,13 +217,13 @@
       }
       return new Promise(function(resolve) {
         if (step > 3) {
-          console.log('Icon' + code + 'broken, exiting upon 3 attemps');
+          log.warn('Icon' + code + 'broken, exiting upon 3 attemps');
           resolve('');
         }
         return windowManager.getWindow(options).then(function(window) {
           var evName, timer, uuid;
           uuid = getUUID();
-          evName = 'potrace' + uuid;
+          evName = "potrace" + uuid;
           window.webContents.send('potrace', code, uuid);
           timer = setTimeout((function() {
             clearTimeout(timer);
@@ -199,12 +232,14 @@
             return invokePotrace(code, options, step).then(function(string) {
               return resolve(string);
             });
-          }), 8000);
+          }), 3000);
           return ipcMain.once(evName, function(event, string, winId) {
             windowManager.releaseWindow(winId);
             clearTimeout(timer);
             return resolve(string);
           });
+        })["catch"](function(err) {
+          return resolve(err);
         });
       });
     };
