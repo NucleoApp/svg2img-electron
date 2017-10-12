@@ -34,8 +34,8 @@
   BrowserWindow = electron.BrowserWindow;
 
   windowManager = {
-    getWindowOne: function(options) {
-      return new Promise(function(resolve, reject) {
+    getWindowOne: function(options, log) {
+      return new Promise(function(resolve) {
         if (global.winOne === null) {
           global.winOne = new BrowserWindow({
             x: 0,
@@ -58,7 +58,8 @@
             return resolve(winOne);
           });
           global.winOne.webContents.on('did-fail-load', function(event, errorCode, errorDescription) {
-            return reject(errorDescription);
+            resolve(winOne);
+            return log.error(errorDescription);
           });
           return;
         } else {
@@ -67,8 +68,8 @@
         }
       });
     },
-    getWindowTwo: function(options) {
-      return new Promise(function(resolve, reject) {
+    getWindowTwo: function(options, log) {
+      return new Promise(function(resolve) {
         if (global.winTwo === null) {
           global.winTwo = new BrowserWindow({
             x: 0,
@@ -91,8 +92,10 @@
             return resolve(winTwo);
           });
           global.winTwo.webContents.on('did-fail-load', function(event, errorCode, errorDescription) {
-            reject(errorDescription);
+            resolve(winTwo);
+            return log.error(errorDescription);
           });
+          return;
         } else {
           global.winTwo.setSize(options.width, options.height);
           resolve(winTwo);
@@ -114,24 +117,20 @@
       global.winTwo.close();
       return global.windowTwoBusy = false;
     },
-    getWindow: function(options) {
+    getWindow: function(options, log) {
       var ctx;
       ctx = this;
       return new Promise(function(resolve, reject) {
         if (global.windowOneBusy) {
           global.windowTwoBusy = true;
-          ctx.getWindowTwo(options).then(function(window) {
+          ctx.getWindowTwo(options, log).then(function(window) {
             return resolve(window);
-          })["catch"](function(err) {
-            return reject(err);
           });
           return;
         } else {
           global.windowOneBusy = true;
-          ctx.getWindowOne(options).then(function(window) {
+          ctx.getWindowOne(options, log).then(function(window) {
             return resolve(window);
-          })["catch"](function(err) {
-            return reject(err);
           });
           return;
         }
@@ -196,7 +195,7 @@
     };
     invokeSVG = function(svg, options) {
       return new Promise(function(resolve) {
-        return windowManager.getWindow(options).then(function(window) {
+        return windowManager.getWindow(options, log).then(function(window) {
           return checkCode(svg).then(function(code) {
             var uuid;
             uuid = getUUID();
@@ -206,8 +205,6 @@
               return resolve(formBase64(string));
             });
           });
-        })["catch"](function(err) {
-          return resolve(err);
         });
       });
     };
@@ -220,7 +217,7 @@
           log.warn('Icon' + code + 'broken, exiting upon 3 attemps');
           resolve('');
         }
-        return windowManager.getWindow(options).then(function(window) {
+        return windowManager.getWindow(options, log).then(function(window) {
           var evName, timer, uuid;
           uuid = getUUID();
           evName = "potrace" + uuid;
@@ -238,8 +235,6 @@
             clearTimeout(timer);
             return resolve(string);
           });
-        })["catch"](function(err) {
-          return resolve(err);
         });
       });
     };

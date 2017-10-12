@@ -18,8 +18,8 @@ electron = require('electron')
 BrowserWindow = electron.BrowserWindow
 
 windowManager =
-  getWindowOne: (options) ->
-    new Promise((resolve, reject) ->
+  getWindowOne: (options, log) ->
+    new Promise((resolve) ->
       if global.winOne == null
         global.winOne = new BrowserWindow(
           x: 0
@@ -39,7 +39,8 @@ windowManager =
         global.winOne.webContents.on 'did-finish-load', ->
           resolve winOne
         global.winOne.webContents.on 'did-fail-load', (event, errorCode, errorDescription) ->
-          reject errorDescription
+          resolve winOne
+          log.error errorDescription
         return
       else
         global.winOne.setSize options.width, options.height
@@ -47,8 +48,8 @@ windowManager =
       return
     )
 
-  getWindowTwo: (options) ->
-    new Promise((resolve, reject) ->
+  getWindowTwo: (options, log) ->
+    new Promise((resolve) ->
       if global.winTwo == null
         global.winTwo = new BrowserWindow(
           x: 0
@@ -69,8 +70,9 @@ windowManager =
         global.winTwo.webContents.on 'did-finish-load', ->
           resolve winTwo
         global.winTwo.webContents.on 'did-fail-load', (event, errorCode, errorDescription) ->
-          reject errorDescription
-          return
+          resolve winTwo
+          log.error errorDescription
+        return
       else
         global.winTwo.setSize options.width, options.height
         resolve winTwo
@@ -90,25 +92,19 @@ windowManager =
     global.winTwo.close()
     global.windowTwoBusy = false
 
-  getWindow: (options) ->
+  getWindow: (options, log) ->
     ctx = @
-    new Promise((resolve, reject) ->
+    return new Promise((resolve, reject) ->
       if global.windowOneBusy
 #        unless global.windowTwoBusy
           global.windowTwoBusy = true
-          ctx.getWindowTwo(options).then( (window) ->
+          ctx.getWindowTwo(options, log).then (window) ->
             resolve window
-          ).catch( (err) ->
-            reject err
-          )
           return
       else
         global.windowOneBusy = true
-        ctx.getWindowOne(options).then((window) ->
+        ctx.getWindowOne(options, log).then (window) ->
           resolve window
-        ).catch((err) ->
-          reject err
-        )
         return
       return
     )
@@ -160,15 +156,13 @@ svg2imgElectron = (svg, options, log = defaultLog) ->
   #
   invokeSVG = (svg, options) ->
     new Promise((resolve) ->
-      windowManager.getWindow(options).then((window) ->
+      windowManager.getWindow(options, log).then (window) ->
         checkCode(svg).then (code) ->
           uuid = getUUID()
           window.webContents.send 'svg', code, options.width, options.height, options.format, uuid
           ipcMain.once "svg#{uuid}", (event, string, winId) ->
             windowManager.releaseWindow(winId)
             resolve formBase64(string)
-      ).catch (err) ->
-        resolve err
     )
 
   invokePotrace = (code, options, step = 1) ->
@@ -176,7 +170,7 @@ svg2imgElectron = (svg, options, log = defaultLog) ->
       if step > 3
         log.warn 'Icon' + code + 'broken, exiting upon 3 attemps'
         resolve('')
-      windowManager.getWindow(options).then((window) ->
+      windowManager.getWindow(options, log).then (window) ->
         uuid = getUUID()
         evName = "potrace#{uuid}"
         window.webContents.send 'potrace', code, uuid
@@ -191,8 +185,6 @@ svg2imgElectron = (svg, options, log = defaultLog) ->
           windowManager.releaseWindow(winId)
           clearTimeout(timer)
           resolve(string)
-      ).catch (err) ->
-        resolve err
     )
 
   return new Promise((c_resolve) ->
