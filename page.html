@@ -2,11 +2,9 @@
 <html>
 <head>
     <title>action page 1</title>
-    <script type="text/javascript" src="StackBlur.js"></script>
-    <script type="text/javascript" src="rgbcolor.js"></script>
-    <script type="text/javascript" src="canvg.min.js"></script>
     <script type="text/javascript" src="potrace.js"></script>
     <script type="text/javascript">
+        require('canvg');
         var ipcRenderer = require('electron').ipcRenderer;
         ipcRenderer.on('potrace', function (event, path, uuid) {
             Potrace.loadFromFS(path);
