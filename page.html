@@ -1,7 +1,9 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>canvg.js callback test</title>
+    <title>action page 1</title>
+    <script type="text/javascript" src="StackBlur.js"></script>
+    <script type="text/javascript" src="rgbcolor.js"></script>
     <script type="text/javascript" src="canvg.min.js"></script>
     <script type="text/javascript" src="potrace.js"></script>
     <script type="text/javascript">
@@ -27,6 +29,9 @@
             }
             ipcRenderer.send(('svg'+uuid), canvas.toDataURL(format), 1);
         });
+        window.onerror = function(error, url, line) {
+            ipcRenderer.send('windowError', error, 1);
+        };
     </script>
 </head>
 <body>

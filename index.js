@@ -191,7 +191,17 @@
       }
     };
     getUUID = function() {
-      return Math.round(Math.random() * 1000000);
+      var charSet, i, len, randomPoz, randomString;
+      charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      len = 10;
+      randomString = '';
+      i = 0;
+      while (i < len) {
+        randomPoz = Math.floor(Math.random() * charSet.length);
+        randomString += charSet.substring(randomPoz, randomPoz + 1);
+        i++;
+      }
+      return randomString;
     };
     invokeSVG = function(svg, options) {
       return new Promise(function(resolve) {
