@@ -42,11 +42,10 @@
             y: 0,
             width: options.width,
             height: options.height,
-            show: true,
+            show: false,
             frame: false,
             enableLargerThanScreen: true
           });
-          global.winOne.openDevTools();
           global.winOne.once('closed', function() {
             global.winOne = null;
           });
@@ -62,6 +61,7 @@
             resolve(winOne);
             return log.error(errorDescription);
           });
+          return;
         } else {
           global.winOne.setSize(options.width, options.height);
           resolve(winOne);
@@ -76,11 +76,10 @@
             y: 0,
             width: options.width,
             height: options.height,
-            show: true,
+            show: false,
             frame: false,
             enableLargerThanScreen: true
           });
-          global.winTwo.openDevTools();
           global.winTwo.once('closed', function() {
             global.winTwo = null;
           });
@@ -96,6 +95,7 @@
             resolve(winTwo);
             return log.error(errorDescription);
           });
+          return;
         } else {
           global.winTwo.setSize(options.width, options.height);
           resolve(winTwo);

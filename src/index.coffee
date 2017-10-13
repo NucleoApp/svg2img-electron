@@ -59,7 +59,6 @@ windowManager =
           show: false
           frame: false
           enableLargerThanScreen: true)
-        # winTwo.openDevTools();
         global.winTwo.once 'closed', ->
           global.winTwo = null
           return
