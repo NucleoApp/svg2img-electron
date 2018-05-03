@@ -112,9 +112,13 @@
       }
     },
     killAllWindows: function() {
-      global.winOne.close();
+      if(global.winOne) {
+        global.winOne.close();
+      }
       global.windowOneBusy = false;
-      global.winTwo.close();
+      if(global.winTwo) {
+        global.winTwo.close();
+      }
       return global.windowTwoBusy = false;
     },
     getWindow: function(options, log) {
@@ -160,7 +164,7 @@
   };
 
   svg2imgElectron = function(svg, options, log) {
-    var checkCode, formBase64, fs, getAction, getUUID, invokePotrace, invokeSVG, ipcMain, os;
+    var checkCode, formBase64, fs, getAction, getUUID, invokeSVG, ipcMain, os;
     if (log == null) {
       log = defaultLog;
     }
@@ -203,47 +207,24 @@
       }
       return randomString;
     };
-    invokeSVG = function(svg, options) {
+    invokeSVG = function(svg, options, potrace) {
       return new Promise(function(resolve) {
         return windowManager.getWindow(options, log).then(function(window) {
           return checkCode(svg).then(function(code) {
             var uuid;
             uuid = getUUID();
-            window.webContents.send('svg', code, options.width, options.height, options.format, uuid);
-            return ipcMain.once("svg" + uuid, function(event, string, winId) {
-              windowManager.releaseWindow(winId);
-              return resolve(formBase64(string));
-            });
-          });
-        });
-      });
-    };
-    invokePotrace = function(code, options, step) {
-      if (step == null) {
-        step = 1;
-      }
-      return new Promise(function(resolve) {
-        if (step > 3) {
-          log.warn('Icon' + code + 'broken, exiting upon 3 attemps');
-          resolve('');
-        }
-        return windowManager.getWindow(options, log).then(function(window) {
-          var evName, timer, uuid;
-          uuid = getUUID();
-          evName = "potrace" + uuid;
-          window.webContents.send('potrace', code, uuid);
-          timer = setTimeout((function() {
-            clearTimeout(timer);
-            windowManager.killWindow(window.id);
-            step += 1;
-            return invokePotrace(code, options, step).then(function(string) {
-              return resolve(string);
-            });
-          }), 3000);
-          return ipcMain.once(evName, function(event, string, winId) {
-            windowManager.releaseWindow(winId);
-            clearTimeout(timer);
-            return resolve(string);
+            window.webContents.send('svg', code, options.width, options.height, options.format, uuid, potrace);
+            if (potrace) {
+              return ipcMain.once("potrace" + uuid, function(event, string, winId) {
+                windowManager.releaseWindow(winId);
+                return resolve(string);
+              });
+            } else {
+              return ipcMain.once("svg" + uuid, function(event, string, winId) {
+                windowManager.releaseWindow(winId);
+                return resolve(formBase64(string));
+              });
+            }
           });
         });
       });
@@ -253,19 +234,15 @@
       action = getAction(options);
       if (action === 'full_potrace') {
         temp = (options.tmpdir || os.tmpdir()) + path.sep + Math.round(Math.random() * 10000) + '.png';
-        invokeSVG(svg, options).then(function(buffer) {
-          fs.writeFile(temp, buffer, function(err) {
-            invokePotrace(temp, options).then(function(data) {
-              return c_resolve(data);
-            });
-          });
+        invokeSVG(svg, options, true).then(function(data) {
+          return c_resolve(data);
         });
       } else {
         if (action === 'kill_windows') {
           windowManager.killAllWindows();
           c_resolve(null);
         } else {
-          invokeSVG(svg, options).then(function(r) {
+          invokeSVG(svg, options, false).then(function(r) {
             return c_resolve(r);
           });
         }

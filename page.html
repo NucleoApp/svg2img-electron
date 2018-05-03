@@ -6,14 +6,13 @@
     <script type="text/javascript">
         require('canvg');
         var ipcRenderer = require('electron').ipcRenderer;
-        ipcRenderer.on('potrace', function (event, path, uuid) {
-            Potrace.loadFromFS(path);
-            Potrace.process(function(){
+        function startPotrace(path, uuid) {
+            Potrace.loadFromFS(path, function(){
                 var svg = Potrace.getSVG(1, null);
                 ipcRenderer.send(('potrace'+uuid), svg, 1);
             });
-        });
-        ipcRenderer.on('svg', function (event, code, width, height, format, uuid) {
+        };
+        ipcRenderer.on('svg', function (event, code, width, height, format, uuid, potrace) {
             if(typeof(format) === "undefined"){
                 format = 'image/png';
             }
@@ -25,7 +24,12 @@
             }else{
                 canvg('canvas', code);
             }
-            ipcRenderer.send(('svg'+uuid), canvas.toDataURL(format), 1);
+            if (potrace) {
+                startPotrace(canvas.toDataURL(format), uuid);
+            } else {
+               ipcRenderer.send(('svg'+uuid), canvas.toDataURL(format), 1); 
+            }
+            
         });
         window.onerror = function(error, url, line) {
             ipcRenderer.send('windowError', error, 1);

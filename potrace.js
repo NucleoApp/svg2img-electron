@@ -118,6 +118,7 @@ var Potrace = (function() {
     imgElement.onload = function() {
         loadCanvas();
         loadBm();
+        process();
     };
 
     function loadImageFromFile(file) {
@@ -134,12 +135,18 @@ var Potrace = (function() {
         reader.readAsDataURL(file);
     }
 
-    function loadFromFS(path){
+    function loadFromFS(path, c){
         if (info.isReady) {
             clear();
         }
-        var url = "file:///"+path;
-        imgElement.src = url;
+
+        if (c) {
+            callback = c;
+        }
+
+        // var url = "file:///"+path;
+        // imgElement.src = url;
+        imgElement.src = path;
     }
 
     function loadImageFromUrl(url) {
@@ -1226,7 +1233,7 @@ var Potrace = (function() {
             callback = c;
         }
         if (!info.isReady) {
-            setTimeout(process, 100);
+            setTimeout(process, 5);
             return;
         }
         bmToPathlist();
