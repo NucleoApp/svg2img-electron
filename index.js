@@ -44,7 +44,10 @@
             height: options.height,
             show: false,
             frame: false,
-            enableLargerThanScreen: true
+            enableLargerThanScreen: true,
+            webPreferences: {
+              nodeIntegration: true
+            }
           });
           global.winOne.once('closed', function() {
             global.winOne = null;
@@ -78,7 +81,10 @@
             height: options.height,
             show: false,
             frame: false,
-            enableLargerThanScreen: true
+            enableLargerThanScreen: true,
+            webPreferences: {
+              nodeIntegration: true
+            }
           });
           global.winTwo.once('closed', function() {
             global.winTwo = null;
